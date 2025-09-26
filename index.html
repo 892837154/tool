@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工具</title>
+    <link href="css/base.css" rel="stylesheet" type="text/css">
+    <link href="css/note.css" rel="stylesheet" type="text/css">
+    <link href="css/page_json.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="header">
+    <div class="header-icon left" onclick="updatePage(memuList.length-1)">⊸</div>
+    <div class="header-title" id="headTitle"></div>
+    <div class="header-icon right" onclick="updatePage(0)">⊞</div>
+</div>
+<div class="container" id="blank_page"></div>
+<div class="container" id="page_id_1">
+    <textarea id="editor" placeholder="开始输入内容..."></textarea>
+    <div class="toolbar">
+        <button class="btn-secondary" onclick="handleNewDocument()">新建</button>
+        <button class="btn-secondary" onclick="handleOpenFile()">打开</button>
+        <button class="btn-primary" onclick="handleSaveFile()">保存</button>
+        <button class="btn-secondary" onclick="handleSaveAs()">另存为</button>
+    </div>
+    <div class="status-bar">
+        <span id="charCount">0 字符</span>
+        <span id="saveStatus">未保存</span>
+    </div>
+    <div id="fileHandle" style="display: none"></div>
+</div>
+<div class="container" id="page_json">
+    <div id="jsonDiv"></div>
+    <button class="btn-secondary" onclick="getHtmlContentInfo()">获取配置内容</button>
+    <button class="btn-secondary" onclick="coypHtmlDateKey()">获取本地存储数据内容</button>
+    <button class="btn-secondary" onclick="saveHtmlContentInfo()">保存body内容</button>
+    <textarea id="content_json"/></textarea>
+</div>
+<script src="js/base.js"></script>
+<script src="js/ddflds.js"></script>
+<script src="js/memuList.js"></script>
+<script src="js/note.js"></script>
+<script src="js/page_json.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    const lastUpdateTime = "20250923";//最后编辑时间
+    const firstLoadPageId = "0";//首次加载页面
+    const htmlContentKey = "htmlContent";//本地存储配置名，在线编辑配置
+    const htmlDateKey = "htmlData";//本地存储数据名
+    const queryRecentNum = 10;//台账展示最近多少条数据
+    init();
+
+    function init() {
+        loadToolList();
+        updatePage(firstLoadPageId);
+    }
+</script>
+</body>
+</html>

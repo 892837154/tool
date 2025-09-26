@@ -1,0 +1,146 @@
+:root {
+    --primary: pink;
+    --secondary: #f9fafb;
+    --headHeight: 2.5em;
+}
+
+/* 基础响应式调整 */
+* {
+    box-sizing: border-box;
+}
+
+/* 移动端容器样式 */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+        width: 100%;
+    }
+
+    /* 工具栏按钮适配 */
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .btn-secondary, .btn-primary {
+        flex: 1;
+        min-width: 80px;
+        padding: 8px 0;
+        font-size: 14px;
+    }
+
+    /* 文本区域适配 */
+    textarea {
+        width: 100% !important;
+        min-height: 200px;
+        font-size: 16px;
+    }
+
+    /* 头部标题适配 */
+    .header-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60%;
+    }
+
+    /* 表单元素适配 */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+    }
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background-color: #f3f4f6;
+    margin: 0;
+}
+
+.container {
+    margin: 3em auto 3em auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 20px; /* 添加内边距，避免内容贴边 */
+    width: 100%;
+    display: none;
+}
+
+.header {
+    background: var(--primary);
+    color: white;
+    text-align: center;
+    font-size: 1.2em;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000; /* 确保头部在其他内容之上 */
+    height: var(--headHeight);
+}
+
+/* 头部图标样式 */
+.header-icon {
+    position: absolute;
+    top: 0;
+    cursor: pointer;
+    font-size: 24pt;
+}
+
+.header-icon.left {
+    left: 0.5em;
+}
+
+.header-icon.right {
+    right: 0.5em;
+}
+
+.header-title {
+    height: var(--headHeight);
+    line-height: var(--headHeight);
+    margin: auto;
+}
+
+/* 工具菜单样式 */
+.tool-item {
+    padding: 0.5em;
+    margin: 0.5em;
+    border: 1px solid rgb(221, 221, 221);
+    border-radius: 0.5em;
+    cursor: pointer;
+    text-align: center;
+    display: inline-block;
+}
+
+/* 文本编辑区域样式优化 */
+textarea {
+    width: 100%;
+    min-height: 200px; /* 增加最小高度，提升初始编辑体验 */
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.6; /* 优化行高，提升可读性 */
+    box-sizing: border-box; /* 确保padding不影响宽度 */
+}
+
+/* 工具栏按钮样式统一 */
+.toolbar button {
+    margin-right: 8px; /* 按钮间距 */
+    padding: 8px 12px;
+}
+
+/* 通用按钮 */
+.btn-normal {
+    margin-right: 8px;
+    padding: 8px 12px;
+}

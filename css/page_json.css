@@ -1,0 +1,42 @@
+/* 工具按钮 */
+.tool-icon {
+    cursor: pointer;
+    display: inline-block;
+    width: 1em;
+}
+
+
+/* 折叠/展开样式 */
+.toggle-btn {
+    margin-right: 8px;
+    cursor: pointer;
+    font-size: 1.5em;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+}
+
+.toggle-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.nested-list {
+    margin-left: 20px;
+    margin-top: 5px;
+    padding-left: 15px;
+    border-left: 1px dashed #ccc;
+}
+
+/* 可折叠内容默认隐藏 */
+.collapsible-content {
+    display: none;
+}
+
+/* 展开状态 */
+.expanded .collapsible-content {
+    display: block;
+}
