@@ -106,7 +106,7 @@ for (let i = 0; i < memuList.length; i++) {
     }
     let queryListKey = memuList[i].queryListKey || "";
     let queryListName = "";
-    const is_create_queryListKey = !!queryListKey;//是否生成queryListKey，如果没有则根据pageFields生成
+    const is_create_queryListKey = !queryListKey;//是否生成queryListKey，如果没有则根据pageFields生成
     if (memuList[i].pageFields != null && memuList[i].pageFields.length > 0) {
         for (let p = 0; p < memuList[i].pageFields.length; p++) {
             if (memuList[i].pageFields[p].fold == null) {
@@ -123,7 +123,7 @@ for (let i = 0; i < memuList.length; i++) {
             if (is_create_queryListKey && memuList[i].pageFields[p].data_key) {
                 queryListKey += (!queryListKey ? "" : ",") + memuList[i].pageFields[p].data_key;
             }
-            if (memuList[i].pageFields[p].data_key) {
+            if ((","+queryListKey+",").indexOf(","+memuList[i].pageFields[p].data_key+",") >= 0) {
                 queryListName += (!queryListName ? "" : ",") + memuList[i].pageFields[p].name;
             }
         }

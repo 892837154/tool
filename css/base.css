@@ -59,7 +59,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 宋体;
     background-color: #f3f4f6;
     margin: 0;
 }
@@ -143,4 +143,20 @@ textarea {
 .btn-normal {
     margin-right: 8px;
     padding: 8px 12px;
+}
+
+table {
+    width: 100%;
+    table-layout: fixed;
+    word-break: break-all;
+    border-collapse: collapse;
+    cellspacing: 0;
+    margin: 0 auto
+}
+td,th {
+    text-align: center;
+    word-wrap: break-word;
+    font-size: 9pt;
+    border: 1px solid black;
+    cellspacing: 0;
 }

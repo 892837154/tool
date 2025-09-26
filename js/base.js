@@ -1,25 +1,26 @@
 /**更新页面*/
 function updatePage(id) {
-    for (var i = 0; i < memuList.length; i++) {
-        if (id == i) {
-            document.getElementById('headTitle').innerHTML = memuList[i].title ? memuList[i].title : memuList[i].name;
-            if (document.getElementById(memuList[i].pageId)) {
-                $("#" + memuList[i].pageId).show("slow");　//div1缓慢显示
+    memuList.forEach((menu, index) => {
+        const pageElement = $(`#${menu.pageId}`);
+        if (id === index) {
+            document.getElementById('headTitle').innerHTML = menu.title || menu.name;
+            if (document.getElementById(menu.pageId)) {
+                pageElement.show("slow");
             } else {
-                //如果找不到id，根据pageFields创建
-                createPageByPageFields(memuList[i], i);
+                createPageByPageFields(index);
             }
         } else {
-            $("#" + memuList[i].pageId).hide("slow");　　//div1缓慢隐藏
+            pageElement.hide("slow");
         }
-    }
+    });
 }
 
 /*根据pageFields创建页面*/
-function createPageByPageFields(menuMap, i) {
+function createPageByPageFields(i) {
+    const menu = memuList[i];
     // 创建页面容器
     const pageDiv = createElement('div', {
-        id: memuList[i].pageId,
+        id: menu.pageId,
         className: 'container'
     });
     document.body.appendChild(pageDiv);
@@ -28,28 +29,29 @@ function createPageByPageFields(menuMap, i) {
     const addBtn = createElement('button', {
         type: 'button',
         className: 'btn-normal',
+        id: menu.pageId + "_addBtn",
         textContent: '新增',
         eventListeners: {
-            click: () => insertData(memuList[i].pageId + "_insert")
+            click: () => insertData(menu.pageId + "_insert")
         }
     });
     pageDiv.appendChild(addBtn);// 添加到文档片段
 
     // 创建台账表格（如果有配置）
-    createLedgerTable(menuMap, i, pageDiv);
+    createLedgerTable(i, pageDiv);
 
     // 创建表单容器
     const insertDiv = createElement('div', {
-        id: memuList[i].pageId + "_insert",
+        id: menu.pageId + "_insert",
         style: {display: 'none'}
     });
 
     // 创建表单元素
-    const {fragment, btnFragment} = createFormElements(menuMap, i);
+    const {fragment, btnFragment} = createFormElements(menu, i);
     insertDiv.appendChild(fragment);
 
     // 添加提交按钮（如果有数据键）
-    if (menuMap.data_key != null) {
+    if (menu.data_key != null) {
         const submitBtn = createElement('button', {
             type: 'button',
             className: 'btn-normal',
@@ -63,11 +65,12 @@ function createPageByPageFields(menuMap, i) {
 
     insertDiv.appendChild(btnFragment);
     pageDiv.appendChild(insertDiv);
-    $("#" + memuList[i].pageId).show("slow");　//缓慢显示
+    $("#" + menu.pageId).show("slow");　//缓慢显示
 }
 
 // 辅助函数：创建台账表格
-function createLedgerTable(menuMap, i, parentElement) {
+function createLedgerTable(i, parentElement) {
+    const menuMap = memuList[i];
     const listKeys = menuMap.queryListKey ? menuMap.queryListKey.split(',') : [];
     const listNames = menuMap.queryListName ? menuMap.queryListName.split(',') : [];
 
@@ -78,14 +81,14 @@ function createLedgerTable(menuMap, i, parentElement) {
         innerHTML: '<h3>最近记录</h3>'
     });
 
-    const table = createElement('table', {className: 'ledger-table'});
+    const table = createElement('table', {style: {bordercollapse: "collapse"}});
     const thead = createElement('thead');
     const headerRow = createElement('tr');
 
     listNames.forEach(name => {
         headerRow.appendChild(createElement('th', {textContent: name}));
     });
-
+    headerRow.appendChild(createElement('th', {textContent: "操作"}))
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
@@ -97,9 +100,14 @@ function createLedgerTable(menuMap, i, parentElement) {
             const row = createElement('tr');
             listKeys.forEach(key => {
                 row.appendChild(createElement('td', {
+                    style: {
+                        boxSizing: 'border-box'
+                    },
                     textContent: item[key] ?? ''
                 }));
             });
+            //详情按钮
+            row.appendChild(createElement('td', {textContent: "详情"}))
             tbody.appendChild(row);
         });
     } else {
@@ -354,34 +362,44 @@ function getNowFormatTime(format, date) {
 
 /*保存到localStorage*/
 function commit(i) {
-    const page_data = {
-        id: generateRandomId(),
-    };
-    for (let p = 0; p < memuList[i].pageFields.length; p++) {
-        const pageField = memuList[i].pageFields[p];
-        if (pageField.field_type == 9) {
-            continue;
+    if (confirm('确定要保存内容吗？')) {
+        // 内容非空校验
+
+        const menu = memuList[i];
+        const page_data = {};
+
+        menu.pageFields.forEach(pageField => {
+            if (pageField.field_type !== 9) {
+                const inputId = menu.pageId + "__" + pageField.data_key;
+                page_data[pageField.data_key] = document.getElementById(inputId).value;
+            }
+        });
+        // 校验page_data是否为空
+        if (page_data && Object.keys(page_data).length > 0) {
+
+            page_data.id = generateRandomId();
+            page_data.createTime = page_data.createTime || getNowFormatTime();//创建时间 yyyymmddHHmmss
+            page_data.is_del = page_data.is_del || 0;//是否删除 否
+
+            try {
+                const dataStr = localStorage.getItem(htmlDateKey) || '{}';
+                const data = JSON.parse(dataStr);
+                // 初始化数据数组（如果不存在）
+                data[menu.data_key] = data[menu.data_key] || [];
+                data[menu.data_key].push(page_data);
+                // 保存回localStorage（需序列化为字符串）
+                localStorage.setItem(htmlDateKey, JSON.stringify(data));
+            } catch (error) {
+                console.error('保存数据失败:', error);
+            }
+            alert('保存成功！');
+        } else {
+            alert('内容不能为空！');
         }
-        let value = document.getElementById(memuList[i].pageId + "__" + pageField.data_key).value;
-        page_data[pageField.data_key] = value;
-    }
-    if (!page_data.createTime) {//创建时间
-        page_data.createTime = getNowFormatTime();//yyyymmddHHmmss
-    }
-    if (!page_data.is_del) {//是否删除
-        page_data.is_del = 0;//否删除
-    }
-    const dataStr = localStorage.getItem(htmlDateKey);
-    const data = dataStr ? JSON.parse(dataStr) : {};
-
-    // 初始化数据数组（如果不存在）
-    if (!data[memuList[i].data_key]) {
-        data[memuList[i].data_key] = [];
+    } else {
+        alert('已取消保存');
     }
 
-    data[memuList[i].data_key].push(page_data);
-    // 保存回localStorage（需序列化为字符串）
-    localStorage.setItem(htmlDateKey, JSON.stringify(data));
 }
 
 /*获取localStorage保存到数据*/
