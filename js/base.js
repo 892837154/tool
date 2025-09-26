@@ -1,11 +1,12 @@
 /**更新页面*/
 function updatePage(id) {
     memuList.forEach((menu, index) => {
-        const pageElement = $(`#${menu.pageId}`);
-        if (id === index) {
+        const pageElement = $("#" + menu.pageId);
+        if (id == index) {
             document.getElementById('headTitle').innerHTML = menu.title || menu.name;
             if (document.getElementById(menu.pageId)) {
                 pageElement.show("slow");
+                closeInsert(index)
             } else {
                 createPageByPageFields(index);
             }
@@ -29,10 +30,10 @@ function createPageByPageFields(i) {
     const addBtn = createElement('button', {
         type: 'button',
         className: 'btn-normal',
-        id: menu.pageId + "_addBtn",
+        id: "addBtn_" + menu.pageId,
         textContent: '新增',
         eventListeners: {
-            click: () => insertData(menu.pageId + "_insert")
+            click: () => insertRecord(menu.pageId)
         }
     });
     pageDiv.appendChild(addBtn);// 添加到文档片段
@@ -42,7 +43,7 @@ function createPageByPageFields(i) {
 
     // 创建表单容器
     const insertDiv = createElement('div', {
-        id: menu.pageId + "_insert",
+        id: "insert_" + menu.pageId,
         style: {display: 'none'}
     });
 
@@ -50,17 +51,28 @@ function createPageByPageFields(i) {
     const {fragment, btnFragment} = createFormElements(menu, i);
     insertDiv.appendChild(fragment);
 
-    // 添加提交按钮（如果有数据键）
+    // 添加提交、关闭按钮（如果有数据键）
     if (menu.data_key != null) {
         const submitBtn = createElement('button', {
             type: 'button',
             className: 'btn-normal',
+            id: 'btn_submit_' + menu.pageId,
             textContent: "提交",
             eventListeners: {
                 click: () => commit(i)
             }
         });
         btnFragment.appendChild(submitBtn);
+        const closeBtn = createElement('button', {
+            type: 'button',
+            className: 'btn-normal',
+            id: 'btn_close_' + menu.pageId,
+            textContent: "关闭",
+            eventListeners: {
+                click: () => closeInsert(i)
+            }
+        });
+        btnFragment.appendChild(closeBtn);
     }
 
     insertDiv.appendChild(btnFragment);
@@ -74,11 +86,12 @@ function createLedgerTable(i, parentElement) {
     const listKeys = menuMap.queryListKey ? menuMap.queryListKey.split(',') : [];
     const listNames = menuMap.queryListName ? menuMap.queryListName.split(',') : [];
 
-    if (listKeys.length === 0 || listNames.length === 0 || listKeys.length !== listNames.length) return;
+    if (listKeys.length == 0 || listNames.length == 0 || listKeys.length !== listNames.length) return;
 
     const ledgerContainer = createElement('div', {
         className: 'ledger-container',
-        innerHTML: '<h3>最近记录</h3>'
+        innerHTML: '<h3>最近记录</h3>',
+        id: "ledger_" + menuMap.pageId
     });
 
     const table = createElement('table', {style: {bordercollapse: "collapse"}});
@@ -106,14 +119,38 @@ function createLedgerTable(i, parentElement) {
                     textContent: item[key] ?? ''
                 }));
             });
-            //详情按钮
-            row.appendChild(createElement('td', {textContent: "详情"}))
+
+            // 操作单元格
+            const actionCell = createElement('td', {textContent: ""});
+
+            // 详情按钮
+            const detailBtn = createElement('button', {
+                className: 'btn-detail',
+                textContent: '详情',
+                eventListeners: {
+                    click: () => showDetail(item, i) // 添加点击事件处理函数
+                }
+            });
+            actionCell.appendChild(detailBtn);
+
+            // 编辑按钮
+            const editBtn = createElement('button', {
+                className: 'btn-edit',
+                textContent: '编辑',
+                style: {marginLeft: '5px'},
+                eventListeners: {
+                    click: () => editRecord(item, i)
+                }
+            });
+            actionCell.appendChild(editBtn);
+
+            row.appendChild(actionCell);
             tbody.appendChild(row);
         });
     } else {
         const emptyRow = createElement('tr');
         emptyRow.appendChild(createElement('td', {
-            colSpan: listNames.length,
+            colSpan: listNames.length + 1,
             textContent: '暂无记录'
         }));
         tbody.appendChild(emptyRow);
@@ -129,6 +166,7 @@ function createFormElements(menuMap, i) {
     const fragment = document.createDocumentFragment();
     const btnFragment = document.createDocumentFragment();
     let foldContainer = null;
+    let foldName = "";
 
     if (!menuMap.pageFields || !Array.isArray(menuMap.pageFields)) {
         console.error('pageFields格式错误或不存在');
@@ -136,15 +174,28 @@ function createFormElements(menuMap, i) {
     }
 
     menuMap.pageFields.forEach(field => {
-        if (field.field_type === 9) {
+        if (field.default == "initialization_time") {
+            field.default = new Date().toLocaleDateString();
+        }
+        if (field.field_type == 2) {
+            // select类型
+            let optionsHtml = ddflds[field.ddfld].map(item =>
+                `<option value="${item.code}" ${item.code === field.default ? 'selected' : ''}>${item.name}</option>`
+            ).join('');
+            fragment.appendChild(createElement('div', {
+                className: 'form-group',
+                innerHTML: `<label>${(field.name || '') + (field.unit || '') + "："}</label><select id="${field.data_key}" ">${optionsHtml}<</select>`
+            }));
+        } else if (field.field_type == 9) {
             // 按钮类型
             btnFragment.appendChild(createElement('button', {
                 type: 'button',
                 className: 'btn-normal',
                 textContent: field.name
             }));
-        } else if (field.field_type === 10) {
+        } else if (field.field_type == 10) {
             // 折叠容器类型
+            foldName = field.name;
             foldContainer = handleFoldContainer(field, fragment, foldContainer);
         } else {
             // 普通表单元素
@@ -157,8 +208,9 @@ function createFormElements(menuMap, i) {
                 foldContainer.appendChild(formGroup);
             } else {
                 if (foldContainer) {
-                    fragment.appendChild(createFoldWrapper(foldContainer));
+                    fragment.appendChild(createFoldWrapper(foldContainer, foldName));
                     foldContainer = null;
+                    foldName = "";
                 }
                 fragment.appendChild(formGroup);
             }
@@ -167,32 +219,29 @@ function createFormElements(menuMap, i) {
 
     // 处理最后一个折叠容器
     if (foldContainer) {
-        fragment.appendChild(createFoldWrapper(foldContainer));
+        fragment.appendChild(createFoldWrapper(foldContainer, foldName));
     }
 
     return {fragment, btnFragment};
 }
 
 // 辅助函数：创建折叠包装器
-function createFoldWrapper(foldContainer) {
+function createFoldWrapper(foldContainer, foldName) {
     const foldDiv = createElement('div');
-    const toggleBtn = createElement('button', {
-        type: 'button',
-        className: 'btn-normal',
-        style: {
-            position: "absolute",
-            right: 0
-        },
-        textContent: '展开',
+    const foldTopDiv = createElement('div');
+    foldName = foldName || "更多";
+    const toggleBtn = createElement('a', {
+        textContent: foldName + '↓',
         eventListeners: {
             click: () => {
-                foldContainer.style.display = foldContainer.style.display === 'none' ? 'block' : 'none';
+                foldContainer.style.display = foldContainer.style.display == 'none' ? 'block' : 'none';
+                toggleBtn.textContent = foldName + (foldContainer.style.display == 'none' ? '↓' : '↑');
             }
         }
     });
-
-    foldDiv.appendChild(createElement('label', {textContent: "展开"}));
-    foldDiv.appendChild(toggleBtn);
+    foldContainer.style.paddingLeft = "0.5em"
+    foldTopDiv.appendChild(toggleBtn)
+    foldDiv.appendChild(foldTopDiv);
     foldDiv.appendChild(foldContainer);
     return foldDiv;
 }
@@ -201,12 +250,13 @@ function createFoldWrapper(foldContainer) {
 function createFormGroup(field, i) {
     const formGroup = createElement('div', {className: 'form-group'});
     formGroup.appendChild(createElement('label', {
-        textContent: (field.name || '') + (field.unit || '')
+        textContent: (field.name || '') + (field.unit || '') + "："
     }));
 
     formGroup.appendChild(createElement('input', {
         type: 'text',
-        id: memuList[i].pageId + "__" + field.data_key
+        id: memuList[i].pageId + "__" + field.data_key,
+        value: field.default || ''
     }));
 
     return formGroup;
@@ -215,7 +265,7 @@ function createFormGroup(field, i) {
 // 辅助函数：处理折叠容器
 function handleFoldContainer(field, fragment, foldContainer) {
     if (foldContainer) {
-        fragment.appendChild(createFoldWrapper(foldContainer));
+        fragment.appendChild(createFoldWrapper(foldContainer, field.name));
     }
 
     return createElement('div', {
@@ -229,11 +279,11 @@ function createElement(tagName, options = {}) {
     const element = document.createElement(tagName);
 
     Object.entries(options).forEach(([key, value]) => {
-        if (key === 'eventListeners') {
+        if (key == 'eventListeners') {
             Object.entries(value).forEach(([event, handler]) => {
                 element.addEventListener(event, handler);
             });
-        } else if (key === 'style') {
+        } else if (key == 'style') {
             Object.assign(element.style, value);
         } else {
             element[key] = value;
@@ -294,8 +344,8 @@ function formatJson(json, options) {
         pad = 0,
         PADDING = '    ';
     options = options || {};
-    options.newlineAfterColonIfBeforeBraceOrBracket = (options.newlineAfterColonIfBeforeBraceOrBracket === true) ? true : false;
-    options.spaceAfterColon = (options.spaceAfterColon === false) ? false : true;
+    options.newlineAfterColonIfBeforeBraceOrBracket = (options.newlineAfterColonIfBeforeBraceOrBracket == true) ? true : false;
+    options.spaceAfterColon = (options.spaceAfterColon == false) ? false : true;
     if (typeof json !== 'string') {
         json = JSON.stringify(json);
     } else if (json.trim() !== '') {
@@ -331,10 +381,136 @@ function generateRandomId() {
     return `${timestamp}_${randomStr}`;
 }
 
-/*保存到localStorage*/
-function insertData(id) {
-    const div = document.getElementById(id);
-    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+/*新增*/
+function insertRecord(id) {
+    document.getElementById("insert_" + id).style.display = 'block';
+    document.getElementById("addBtn_" + id).style.display = 'none';
+    document.getElementById("ledger_" + id).style.display = 'none';
+}
+
+/*编辑*/
+function editRecord(item, menuIndex) {
+    const menu = memuList[menuIndex];
+
+    // 显示编辑表单
+    document.getElementById("insert_" + menu.pageId).style.display = 'block';
+    document.getElementById("addBtn_" + menu.pageId).style.display = 'none';
+    document.getElementById("ledger_" + menu.pageId).style.display = 'none';
+
+    // 填充表单数据
+    menu.pageFields.forEach(field => {
+        if (field.field_type !== 9) {
+            const inputId = menu.pageId + "__" + field.data_key;
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = item[field.data_key] || '';
+            }
+        }
+    });
+
+    // 修改提交按钮行为为更新而非新增
+    const submitBtn = document.querySelector(`#insert_${menu.pageId} button[textContent="提交"]`);
+    if (submitBtn) {
+        submitBtn.onclick = () => updateRecord(item.id, menuIndex);
+    }
+}
+
+// 更新记录函数
+function updateRecord(id, menuIndex) {
+    if (!confirm('确定要更新这条记录吗？')) {
+        return;
+    }
+
+    const menu = memuList[menuIndex];
+    const updatedData = {};
+
+    menu.pageFields.forEach(field => {
+        if (field.field_type !== 9) {
+            const inputId = menu.pageId + "__" + field.data_key;
+            updatedData[field.data_key] = document.getElementById(inputId).value;
+        }
+    });
+
+    try {
+        const dataStr = localStorage.getItem(htmlDateKey) || '{}';
+        const data = JSON.parse(dataStr);
+
+        if (data[menu.data_key]) {
+            const index = data[menu.data_key].findIndex(item => item.id === id);
+            if (index !== -1) {
+                // 保留原有创建时间和ID
+                updatedData.id = id;
+                updatedData.createTime = data[menu.data_key][index].createTime;
+                updatedData.is_del = data[menu.data_key][index].is_del || 0;
+
+                data[menu.data_key][index] = updatedData;
+                localStorage.setItem(htmlDateKey, JSON.stringify(data));
+                alert('更新成功！');
+
+                // 关闭编辑表单并刷新列表
+                closeInsert(menu.pageId);
+                document.getElementById("ledger_" + menu.pageId).innerHTML = '';
+                createLedgerTable(menuIndex, document.getElementById(menu.pageId));
+                return;
+            }
+        }
+        alert('未找到要更新的记录');
+    } catch (error) {
+        console.error('更新数据失败:', error);
+        alert('更新失败');
+    }
+}
+
+/*详情*/
+function showDetail(item, menuIndex) {
+    const menu = memuList[menuIndex];
+
+    // 显示表单
+    document.getElementById("insert_" + menu.pageId).style.display = 'block';
+    document.getElementById("addBtn_" + menu.pageId).style.display = 'none';
+    document.getElementById("ledger_" + menu.pageId).style.display = 'none';
+
+    // 填充表单数据并设置为只读
+    menu.pageFields.forEach(field => {
+        if (field.field_type !== 9) {
+            const inputId = menu.pageId + "__" + field.data_key;
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = item[field.data_key] || '';
+                input.readOnly = true;  // 设置为只读
+                input.style.backgroundColor = '#f5f5f5';  // 添加视觉提示
+            }
+        }
+    });
+
+    // 隐藏提交按钮，显示关闭按钮
+    const submitBtn = document.getElementById('btn_submit_' + menu.pageId);
+    const closeBtn = document.getElementById('btn_close_' + menu.pageId);
+    if (submitBtn) submitBtn.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'block';
+}
+
+/*点击关闭*/
+function closeInsert(i) {
+    if (document.getElementById("insert_" + memuList[i].pageId)) {
+        document.getElementById("insert_" + memuList[i].pageId).style.display = "none";
+
+        //清空表单
+        document.getElementById("insert_" + memuList[i].pageId).querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        //清空select
+        document.getElementById("insert_" + memuList[i].pageId).querySelectorAll('select').forEach(select => {
+            select.value = '';
+        });
+    }
+
+    if (document.getElementById("addBtn_" + memuList[i].pageId)) {
+        document.getElementById("addBtn_" + memuList[i].pageId).style.display = "block";
+    }
+    if (document.getElementById("ledger_" + memuList[i].pageId)) {
+        document.getElementById("ledger_" + memuList[i].pageId).style.display = "block";
+    }
 }
 
 function getNowFormatTime(format, date) {
@@ -360,7 +536,7 @@ function getNowFormatTime(format, date) {
     return format.replace(/YYYY|MM|DD|HH|mm|ss/g, placeholder => dateParts[placeholder]);
 }
 
-/*保存到localStorage*/
+/*点击提交，保存到localStorage*/
 function commit(i) {
     if (confirm('确定要保存内容吗？')) {
         // 内容非空校验

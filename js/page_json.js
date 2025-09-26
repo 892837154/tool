@@ -36,10 +36,10 @@ function analyzeJsonStructure(idkey, jsonString, isTopLevel = true) {
         if (isTopLevel) {
             result += '<div class="json-analysis">';
             result += '<h4>JSON结构分析：</h4>';
-            result += '<ul>';
+            result += '<ul style="list-style-type: none;padding-inline-start: 0;">';
         } else {
             // 子集使用嵌套列表
-            result += '<ul class="nested-list">';
+            result += '<ul class="nested-list" style="padding-inline-start: 0.1em;">';
         }
         // 循环所有key
         for (const key in jsonObj) {
@@ -240,6 +240,7 @@ function saveHtmlContentInfo() {
         alert('已取消保存');
     }
 }
+
 function coypHtmlDateKey() {
     const dataStr = localStorage.getItem(htmlDateKey);
     if (dataStr) {

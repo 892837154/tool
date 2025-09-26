@@ -153,10 +153,26 @@ table {
     cellspacing: 0;
     margin: 0 auto
 }
-td,th {
+
+td, th {
     text-align: center;
     word-wrap: break-word;
     font-size: 9pt;
     border: 1px solid black;
     cellspacing: 0;
+}
+
+a {
+    line-height: 1.5em;
+    cursor: pointer;
+    color: #337ab7;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group > input {
+    padding: 10px;
+    width: 90%;
 }
