@@ -176,3 +176,7 @@ a {
     padding: 10px;
     width: 90%;
 }
+.form-group > select {
+    padding: 10px;
+    width: 90%;
+}

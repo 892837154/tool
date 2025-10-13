@@ -5,7 +5,14 @@ function getHtmlContentInfo() {
         return;
     }
     content = formatJson(content);
-    $("#content_json").val(content);
+    content = JSON.parse(content);
+    content.menuList = content.menuList || [];
+    content.ddflds = content.ddflds || {};
+    if (isMergeLocal) {
+        content.menuList = deepMergeJSON(content.menuList, defaultMenuList);
+        content.ddflds = deepMergeJSON(content.ddflds, ddflds);
+    }
+    $("#content_json").val(JSON.stringify(content));
     initializationDivjsonDiv()
 }
 
@@ -67,31 +74,29 @@ function analyzeJsonStructure(idkey, jsonString, isTopLevel = true) {
                 ).join('');
                 // 创建值输入控件
                 let valueControl = '';
-                if (typeCode === 'string' || typeCode === 'number') {
-                    // 字符串/数字使用文本输入框[添加HTML转义]
-                    valueControl = `<input type="text" value="${escapeHtml(value)}" class="value-input" oninput="changeContentJsonValue(this,'${id}')" >`;
-                } else if (typeCode === 'boolean') {
-                    // 布尔值使用下拉选择框
-                    valueControl = `<select class="value-select" onchange="changeContentJsonValue(this,'${id}')" >
+                if (typeCode === 'string' || typeCode === 'number' || typeCode === 'boolean' || typeCode === 'array' || typeCode === 'object') {
+                    // 字符串/数字
+                    valueControl = `<input id=${"value__input__" + id} type="text" value="${escapeHtml(value)}" class="value-input" oninput="changeContentJsonValue(this,'${id}')" style="${(typeCode === 'string' || typeCode == 'number') ? '' : 'display: none'}">`;
+
+                    // 布尔值
+                    valueControl += `<select id=${"value__boolean__" + id} class="value-select" onchange="changeContentJsonValue(this,'${id}')"  style="${(typeCode === 'boolean') ? '' : 'display: none'}">
                             <option value="true" ${value === true ? 'selected' : ''}>true</option>
                             <option value="false" ${value === false ? 'selected' : ''}>false</option>
                         </select>`;
-                } else if (typeCode === 'null') {
-                    // null值显示固定文本
-                    valueControl = `<span class="null-value">null</span>`;
-                } else if (typeCode === 'array' || typeCode === 'object') {
-                    // 对象/数组不显示值输入框
-                    valueControl = '';
+                    if (typeCode == 'string') {
+                        //对象/数组
+                        valueControl += `<div style="display: inline-block;"><div id="${"value__array_object__" + id}" style="display: none">${addbtn(id)}</div></div>`;
+                    }
                 } else {
-                    // 其他类型显示类型提示
-                    valueControl = `<span class="type-hint">${typeCode}</span>`;
+                    valueControl = '';
                 }
+
                 // 当前key的列表项[类型下拉框添加禁用条件、添加折叠按钮]
                 result += `
                         <li class="json-item ${typeCode === 'array' || typeCode === 'object' ? 'collapsible' : ''}">
                           <div class="key-input-group">
                             ${(typeCode === 'array' || typeCode === 'object') ? `<span class="toggle-btn" onclick="toggleCollapse(this)">+</span>` : ''}
-                            <select class="type-select" id=${"typeCode__" + id} ${hasValue ? 'disabled' : ''} style="${(typeCode === 'array' || typeCode === 'object') ? 'display: none' : ''}">${optionsHtml}</select>
+                            <select class="type-select" id=${"typeCode__" + id} ${hasValue ? 'disabled' : ''} style="${(typeCode === 'array' || typeCode === 'object') ? 'display: none' : ''}" onchange="changeTypeCode(this,'${id}')">${optionsHtml}</select>
                             <strong>${escapeHtml(key)}:</strong>
                             ${valueControl}
                             <div class="tool-icon" onclick="deleteContentJsonKey('${id}')">✖</div>
@@ -111,12 +116,7 @@ function analyzeJsonStructure(idkey, jsonString, isTopLevel = true) {
             }
         }
         // 当前key的列表项[类型下拉框添加禁用条件、添加折叠按钮]
-        result += `<li class="json-item ">
-                          <div class="key-input-group">
-                            <div class="tool-icon" onclick="addContentJsonKey('${idkey}')">✚</div>
-                            <input type="text" id=${"add__" + idkey} class="value-input" style="display: none">
-                          </div>
-                       </li>`;
+        result += `<li class="json-item "><div class="key-input-group">${addbtn(idkey)}</div></li>`;
         // 闭合列表容器
         result += '</ul>';
         // 闭合顶层容器
@@ -141,6 +141,12 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
+function addbtn(idkey) {
+    return `<div id=${"addBtn__" + idkey} class="tool-icon" onclick="addContentJsonInput('${idkey}')">✚</div>
+            <input id=${"addInput__" + idkey} type="text"  class="value-input" style="display:none">
+            <div id=${"addSucBtn__" + idkey} class="tool-icon" onclick="addContentJsonKey('${idkey}')" style="display:none">✔</div>`;
+}
+
 function changeContentJsonValue(input, keyPath) {
     var keyPaths = keyPath.split("__");
     let content = document.getElementById('content_json').value;
@@ -157,6 +163,10 @@ function changeContentJsonValue(input, keyPath) {
 }
 
 function deleteContentJsonKey(keyPath) {
+    if (("," + defaultContentFields + ",").indexOf("," + keyPath + ",") != -1) {
+        alert("不能删除默认字段");
+        return;
+    }
     var keyPaths = keyPath.split("__");
     let content = document.getElementById('content_json').value;
     content = JSON.parse(content);
@@ -176,35 +186,44 @@ function deleteContentJsonKey(keyPath) {
     initializationDivjsonDiv()
 }
 
+function addContentJsonInput(keyPath) {
+    document.getElementById("addBtn__" + keyPath).style.display = "none";
+    document.getElementById("addInput__" + keyPath).style.display = "";
+    document.getElementById("addSucBtn__" + keyPath).style.display = "";
+}
+
 function addContentJsonKey(keyPath) {
-    let addInput = document.getElementById("add__" + keyPath);
-    if (addInput.style.display === "none") {
-        addInput.style.display = ""
-        return;
-    }
-    if (addInput.value === null || addInput.value.trim() === "") {
-        alert("请输入值");
-        return;
-    }
-    var keyPaths = keyPath.split("__");
+    let addInput = document.getElementById("addInput__" + keyPath);
+    setValueBykeyPath(keyPath, addInput.value, "");
+    initializationDivjsonDiv()
+}
+
+/*根据路径设置值*/
+function setValueBykeyPath(keyPath, key, value) {
     let content = document.getElementById('content_json').value;
     content = JSON.parse(content);
-    var param = content
-    for (var i = 0; i < keyPaths.length; i++) {
-        if (i === keyPaths.length - 1) {
-            if (Array.isArray(param[keyPaths[i]])) {
-                var c = {};
-                c[addInput.value] = ""
-                param[keyPaths[i]].push(c);
+    if (keyPath == "") {
+        content[key] = value;
+    } else {
+        var keyPaths = keyPath.split("__");
+        var param = content
+        for (var i = 0; i < keyPaths.length; i++) {
+            if (i === keyPaths.length - 1) {
+                if (key == "") {
+                    param[keyPaths[i]] = value;
+                } else {
+                    if (Array.isArray(param[keyPaths[i]])) {
+                        param[keyPaths[i]].push({[key]: value});
+                    } else {
+                        param[keyPaths[i]][key] = value;
+                    }
+                }
             } else {
-                param[keyPaths[i]][addInput.value] = "";
+                param = param[keyPaths[i]]
             }
-        } else {
-            param = param[keyPaths[i]]
         }
     }
     document.getElementById('content_json').value = JSON.stringify(content)
-    initializationDivjsonDiv()
 }
 
 /*折叠/展开切换函数*/
@@ -242,8 +261,30 @@ function saveHtmlContentInfo() {
 }
 
 function coypHtmlDateKey() {
-    const dataStr = localStorage.getItem(htmlDateKey);
+    const dataStr = localStorage.getItem(htmlContentKey);
     if (dataStr) {
         document.getElementById("content_json").value = dataStr;
+    }
+}
+
+function changeTypeCode(select, keyPath) {
+    let value__input = document.getElementById("value__input__" + keyPath);
+    let value__boolean = document.getElementById("value__boolean__" + keyPath);
+    let value__array_object = document.getElementById("value__array_object__" + keyPath);
+    value__input.style.display = "none";
+    value__boolean.style.display = "none";
+    value__array_object.style.display = "none";
+    if (select.value == "array" || select.value == "object") {
+        value__array_object.style.display = "";
+        setValueBykeyPath(keyPath, "", select.value == "array" ? [] : {});
+    } else if (select.value == "boolean") {
+        value__boolean.style.display = "";
+        value__boolean[1].selected = true;
+        setValueBykeyPath(keyPath, "", false);
+        value__input.value = false;
+    } else if (select.value == "string" || select.value == "number") {
+        value__input.style.display = "";
+        setValueBykeyPath(keyPath, "", "");
+        value__input.value = "";
     }
 }

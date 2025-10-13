@@ -10,7 +10,7 @@
 </head>
 <body>
 <div class="header">
-    <div class="header-icon left" onclick="updatePage(memuList.length-1)">⊸</div>
+    <div class="header-icon left" onclick="updatePage(menuList.length-1)">⊸</div>
     <div class="header-title" id="headTitle"></div>
     <div class="header-icon right" onclick="updatePage(0)">⊞</div>
 </div>
@@ -36,7 +36,7 @@
     <button class="btn-secondary" onclick="saveHtmlContentInfo()">保存body内容</button>
     <textarea id="content_json"></textarea>
 </div>
-<script src="js/config.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/base.js"></script>
 <script src="js/ddflds.js"></script>
 <script src="js/note.js"></script>
@@ -48,6 +48,8 @@
     const htmlContentKey = "htmlContent";//本地存储配置名，在线编辑配置
     const htmlDateKey = "htmlData";//本地存储数据名
     const queryRecentNum = 10;//台账展示最近多少条数据
+    const isMergeLocal = true;//是否合并本地存储
+    const defaultContentFields = "menuList,ddflds";//存储默认字段
     init();
 
     function init() {

@@ -1,6 +1,6 @@
 /**更新页面*/
 function updatePage(id) {
-    memuList.forEach((menu, index) => {
+    menuList.forEach((menu, index) => {
         const pageElement = $("#" + menu.pageId);
         if (id == index) {
             document.getElementById('headTitle').innerHTML = menu.title || menu.name;
@@ -18,7 +18,7 @@ function updatePage(id) {
 
 /*根据pageFields创建页面*/
 function createPageByPageFields(i) {
-    const menu = memuList[i];
+    const menu = menuList[i];
     // 创建页面容器
     const pageDiv = createElement('div', {
         id: menu.pageId,
@@ -82,7 +82,7 @@ function createPageByPageFields(i) {
 
 // 辅助函数：创建台账表格
 function createLedgerTable(i, parentElement) {
-    const menuMap = memuList[i];
+    const menuMap = menuList[i];
     const listKeys = menuMap.queryListKey ? menuMap.queryListKey.split(',') : [];
     const listNames = menuMap.queryListName ? menuMap.queryListName.split(',') : [];
 
@@ -106,7 +106,7 @@ function createLedgerTable(i, parentElement) {
     table.appendChild(thead);
 
     const tbody = createElement('tbody');
-    const data = getHtmlDateKey(memuList[i].data_key);
+    const data = getHtmlDateKey(menuList[i].data_key);
 
     if (data?.length > 0) {
         data.slice(-10).forEach(item => {
@@ -177,28 +177,8 @@ function createFormElements(menuMap, i) {
         if (field.default == "initialization_time") {
             field.default = new Date().toLocaleDateString();
         }
-        if (field.field_type == 2) {
-            // select类型
-            let optionsHtml = ddflds[field.ddfld].map(item =>
-                `<option value="${item.code}" ${item.code === field.default ? 'selected' : ''}>${item.name}</option>`
-            ).join('');
-            fragment.appendChild(createElement('div', {
-                className: 'form-group',
-                innerHTML: `<label>${(field.name || '') + (field.unit || '') + "："}</label><select id="${field.data_key}" ">${optionsHtml}<</select>`
-            }));
-        } else if (field.field_type == 9) {
-            // 按钮类型
-            btnFragment.appendChild(createElement('button', {
-                type: 'button',
-                className: 'btn-normal',
-                textContent: field.name
-            }));
-        } else if (field.field_type == 10) {
-            // 折叠容器类型
-            foldName = field.name;
-            foldContainer = handleFoldContainer(field, fragment, foldContainer);
-        } else {
-            // 普通表单元素
+        if (field.field_type == 1) {
+            // input类型
             const formGroup = createFormGroup(field, i);
 
             if (field.fold) {
@@ -214,6 +194,43 @@ function createFormElements(menuMap, i) {
                 }
                 fragment.appendChild(formGroup);
             }
+        } else if (field.field_type == 2) {
+            // select类型
+            let optionsHtml = ddflds[field.ddfld].map(item =>
+                `<option value="${item.code}" ${item.code === field.default ? 'selected' : ''}>${item.name}</option>`
+            ).join('');
+            fragment.appendChild(createElement('div', {
+                className: 'form-group',
+                innerHTML: `<label>${(field.name || '') + (field.unit || '') + "："}</label><select id="${field.data_key}" ">${optionsHtml}<</select>`
+            }));
+        } else if (field.field_type == 3) {
+            // 时间选择框
+            fragment.appendChild(createElement('div', {
+                className: 'form-group',
+                innerHTML: `<label>${(field.name || '') + (field.unit || '') + "："}</label><input type="date" id="${field.data_key}" value="${field.default || ''}">`
+            }));
+        } else if (field.field_type == 9) {
+            // 按钮类型
+            btnFragment.appendChild(createElement('button', {
+                type: 'button',
+                className: 'btn-normal',
+                textContent: field.name
+            }));
+        } else if (field.field_type == 10) {
+            // 折叠容器类型
+            if (foldContainer) {
+                // 折叠容器已存在
+                fragment.appendChild(createFoldWrapper(foldContainer, ""));
+            }
+
+            // 创建新的折叠容器
+            foldContainer = createElement('div', {
+                id: field.data_key,
+                style: {display: 'none'}
+            });
+            foldName = field.name;
+        } else {
+            alert("未知的表单元素类型：" + field.field_type);
         }
     });
 
@@ -255,24 +272,14 @@ function createFormGroup(field, i) {
 
     formGroup.appendChild(createElement('input', {
         type: 'text',
-        id: memuList[i].pageId + "__" + field.data_key,
+        id: menuList[i].pageId + "__" + field.data_key,
         value: field.default || ''
     }));
 
     return formGroup;
 }
 
-// 辅助函数：处理折叠容器
-function handleFoldContainer(field, fragment, foldContainer) {
-    if (foldContainer) {
-        fragment.appendChild(createFoldWrapper(foldContainer, field.name));
-    }
 
-    return createElement('div', {
-        id: field.fold_name,
-        style: {display: 'none'}
-    });
-}
 
 // 通用元素创建函数
 function createElement(tagName, options = {}) {
@@ -296,7 +303,7 @@ function createElement(tagName, options = {}) {
 /**加载工具列表*/
 function loadToolList() {
     // 获取第一个工具的pageId
-    const firstMenuPageId = memuList[0].pageId;
+    const firstMenuPageId = menuList[0].pageId;
 
     let container = document.getElementById(firstMenuPageId);
 
@@ -315,8 +322,8 @@ function loadToolList() {
     const fragment = document.createDocumentFragment();
 
     // 遍历工具列表创建div元素
-    for (let i = 0; i < memuList.length; i++) {
-        const tool = memuList[i];
+    for (let i = 0; i < menuList.length; i++) {
+        const tool = menuList[i];
         if (tool.toolShow != false) {//跳过不显示
             // 创建工具项div
             const toolDiv = document.createElement('div');
@@ -338,7 +345,7 @@ function loadToolList() {
     container.appendChild(fragment);
 }
 
-//格式化代码函数,已经用原生方式写好了不需要改动,直接引用就好
+//格式化代码函数
 function formatJson(json, options) {
     let formatted = '',
         pad = 0,
@@ -390,7 +397,7 @@ function insertRecord(id) {
 
 /*编辑*/
 function editRecord(item, menuIndex) {
-    const menu = memuList[menuIndex];
+    const menu = menuList[menuIndex];
 
     // 显示编辑表单
     document.getElementById("insert_" + menu.pageId).style.display = 'block';
@@ -421,7 +428,7 @@ function updateRecord(id, menuIndex) {
         return;
     }
 
-    const menu = memuList[menuIndex];
+    const menu = menuList[menuIndex];
     const updatedData = {};
 
     menu.pageFields.forEach(field => {
@@ -463,7 +470,7 @@ function updateRecord(id, menuIndex) {
 
 /*详情*/
 function showDetail(item, menuIndex) {
-    const menu = memuList[menuIndex];
+    const menu = menuList[menuIndex];
 
     // 显示表单
     document.getElementById("insert_" + menu.pageId).style.display = 'block';
@@ -492,24 +499,24 @@ function showDetail(item, menuIndex) {
 
 /*点击关闭*/
 function closeInsert(i) {
-    if (document.getElementById("insert_" + memuList[i].pageId)) {
-        document.getElementById("insert_" + memuList[i].pageId).style.display = "none";
+    if (document.getElementById("insert_" + menuList[i].pageId)) {
+        document.getElementById("insert_" + menuList[i].pageId).style.display = "none";
 
         //清空表单
-        document.getElementById("insert_" + memuList[i].pageId).querySelectorAll('input').forEach(input => {
+        document.getElementById("insert_" + menuList[i].pageId).querySelectorAll('input').forEach(input => {
             input.value = '';
         });
         //清空select
-        document.getElementById("insert_" + memuList[i].pageId).querySelectorAll('select').forEach(select => {
+        document.getElementById("insert_" + menuList[i].pageId).querySelectorAll('select').forEach(select => {
             select.value = '';
         });
     }
 
-    if (document.getElementById("addBtn_" + memuList[i].pageId)) {
-        document.getElementById("addBtn_" + memuList[i].pageId).style.display = "block";
+    if (document.getElementById("addBtn_" + menuList[i].pageId)) {
+        document.getElementById("addBtn_" + menuList[i].pageId).style.display = "block";
     }
-    if (document.getElementById("ledger_" + memuList[i].pageId)) {
-        document.getElementById("ledger_" + memuList[i].pageId).style.display = "block";
+    if (document.getElementById("ledger_" + menuList[i].pageId)) {
+        document.getElementById("ledger_" + menuList[i].pageId).style.display = "block";
     }
 }
 
@@ -541,7 +548,7 @@ function commit(i) {
     if (confirm('确定要保存内容吗？')) {
         // 内容非空校验
 
-        const menu = memuList[i];
+        const menu = menuList[i];
         const page_data = {};
 
         menu.pageFields.forEach(pageField => {
@@ -584,4 +591,205 @@ function getHtmlDateKey(data_key) {
     // 修复：解析JSON字符串为对象，处理null情况
     const data = dataStr ? JSON.parse(dataStr) : {};
     return data[data_key] || []; // 确保返回数组，避免后续操作报错
+}
+
+
+/**
+ * 深度合并两个JSON对象
+ * @param {Object} obj1 - 第一个JSON对象
+ * @param {Object} obj2 - 第二个JSON对象
+ * @returns {Object} 合并后的新对象
+ */
+function deepMergeJSON(obj1, obj2) {
+    // 处理null/undefined输入
+    if (!obj1 && !obj2) return {};
+    if (!obj1) return JSON.parse(JSON.stringify(obj2));
+    if (!obj2) return JSON.parse(JSON.stringify(obj1));
+
+    // 使用JSON方法实现深拷贝第一个对象
+    const result = JSON.parse(JSON.stringify(obj1));
+
+    // result合并第二个对象的所有属性
+    Object.keys(obj2).forEach(key => {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+        if (!val1) {
+            result[key] = val2;
+            return;
+        }
+
+        // 处理对象类型属性的递归合并
+        if (isObject(val2) && isObject(val1)) {
+            if (Array.isArray(val2)) {
+                // 合并数组（去重合并）
+                result[key] = mergeArrays(val1 || [], val2);
+            } else {
+                // 合并对象
+                result[key] = deepMergeJSON(val1, val2);
+            }
+        } else {
+            // 基本类型或新属性直接覆盖
+            result[key] = val2;
+        }
+    });
+
+    return result;
+}
+
+/**
+ * 判断是否为普通对象
+ * @param {*} obj - 待判断对象
+ * @returns {Boolean} 判断结果
+ */
+function isObject(obj) {
+    return obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
+/**
+ * 合并两个数组，对相同索引的元素进行深度合并
+ * @param {Array} arr1 - 第一个数组
+ * @param {Array} arr2 - 第二个数组
+ * @returns {Array} 合并后的新数组
+ */
+function mergeArrays(arr1, arr2) {
+    const merged = [];
+    // 获取两个数组的最大长度
+    const maxLength = Math.max(arr1.length, arr2.length);
+
+    for (let i = 0; i < maxLength; i++) {
+        const item1 = arr1[i];
+        const item2 = arr2[i];
+
+        if (item1 && item2) {
+            // 两个元素都存在则深度合并
+            merged.push(deepMergeJSON(item1, item2));
+        } else if (item1) {
+            // 只有第一个数组有元素
+            merged.push(item1);
+        } else if (item2) {
+            // 只有第二个数组有元素
+            merged.push(item2);
+        } else {
+            // 两个数组都没有元素则添加空对象
+            merged.push({});
+        }
+    }
+
+    return merged;
+}
+
+/**
+ * 剔除
+ * @param
+ * @param
+ * @returns
+ */
+function eliminateJSON(objAll, obj1) {
+    // 处理null/undefined输入
+    if (!objAll && !obj1) return {};
+    if (!objAll) return {};
+    if (!obj1) return JSON.parse(JSON.stringify(objAll));
+
+    // 使用JSON方法实现深拷贝第一个对象
+    const result = JSON.parse(JSON.stringify(objAll));
+
+    // result合并第二个对象的所有属性
+    Object.keys(obj1).forEach(key => {
+        const valAll = objAll[key];
+        const val1 = obj1[key];
+        if (!valAll) {
+            return;
+        }
+
+        if (isObject(val1) && isObject(valAll)) {
+            if (Array.isArray(val1)) {
+                // 合并数组（去重合并）
+                result[key] = mergeArrays(valAll || [], val1);
+            } else {
+                // 合并对象
+                result[key] = deepMergeJSON(valAll, val1);
+            }
+        } else {
+            // 基本类型或新属性直接覆盖
+            result[key] = val1;
+        }
+    });
+
+    return result;
+
+}
+
+//判断是否相同，如果相同则{}，不同记录arr1
+function eliminateArrays(arr1, arr2) {
+    const result = JSON.parse(JSON.stringify(arr1));
+    for (let i = 0; i < arr1.length; i++) {
+        const item1 = arr1[i];
+        const item2 = arr2[i];
+        if (item1 && item2) {
+            // 两个元素都存在则判断相同，相同{}，不同记录arr1
+            result.push(deepMergeJSON(item1, item2));
+        } else if (item1) {
+            // 只有第一个数组有元素
+            result.push(item1);
+        } else if (item2) {
+            // 只有第二个数组有元素
+            result.push(item2);
+        } else {
+            // 两个数组都没有元素则添加空对象
+            result.push({});
+        }
+    }
+    return result;
+}
+
+/**
+ * 深度比较两个值是否相等
+ * @param {Object} obj1 - 第一个JSON对象
+ * @param {Object} obj2 - 第二个JSON对象
+ * @returns {Boolean} 是否相等
+ *例子：
+ // 定义待比较的JSON对象
+ const json3 = {"name": "Alice", cc: [{"name": "Alice", "age": 30}, {"name": "Alice", "age": 30}], "age": 30};
+ const json4 = {"name": "Alice", "age": 30, cc: [{"name": "Alice", "age": 30}, {"age": 30, "name": "Alice"}]};
+
+ // 判断结果：true（两个JSON内容完全相等）
+ console.log(deepEqual(json3, json4)); // 输出：true
+
+ */
+function deepEqual(obj1, obj2) {
+    // 处理null和undefined
+    if (obj1 === obj2) return true;
+
+    // 若其中一个不是对象或为null，直接返回false
+    if (typeof obj1 !== 'object' || obj1 === null ||
+        typeof obj2 !== 'object' || obj2 === null) {
+        return false;
+    }
+
+    // 处理数组
+    if (Array.isArray(obj1) && Array.isArray(obj2)) {
+        // 数组长度不同则不相等
+        if (obj1.length !== obj2.length) return false;
+        // 逐个元素深度比较
+        for (let i = 0; i < obj1.length; i++) {
+            if (!deepEqual(obj1[i], obj2[i])) return false;
+        }
+        return true;
+    }
+
+    // 处理对象（非数组）
+    const keys1 = Object.keys(obj1).sort(); // 排序属性名，处理无序问题
+    const keys2 = Object.keys(obj2).sort();
+
+    // 属性数量不同则不相等
+    if (keys1.length !== keys2.length) return false;
+
+    // 逐个属性深度比较
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
+        }
+    }
+
+    return true;
 }
