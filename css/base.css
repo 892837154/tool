@@ -140,9 +140,15 @@ textarea {
 }
 
 /* 通用按钮 */
-.btn-normal {
-    margin-right: 8px;
-    padding: 8px 12px;
+button {
+    margin: 0.2em;
+    padding: 0.2em 1em;
+}
+
+input {
+    height: 2em;
+    border-radius: 8px;
+    border: 1px solid;
 }
 
 table {
@@ -176,7 +182,18 @@ a {
     padding: 10px;
     width: 90%;
 }
+
 .form-group > select {
     padding: 10px;
     width: 90%;
+}
+
+
+/*page_id_1*/
+.page_id_1_empty::before {
+    font-size: 25px;
+    content: '任意文件拖到这里';
+    white-space: pre;
+    transform: translate(-50%, -50%);
+    color: gray;
 }

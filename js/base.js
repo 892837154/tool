@@ -29,7 +29,6 @@ function createPageByPageFields(i) {
     // 创建新增按钮
     const addBtn = createElement('button', {
         type: 'button',
-        className: 'btn-normal',
         id: "addBtn_" + menu.pageId,
         textContent: '新增',
         eventListeners: {
@@ -55,7 +54,6 @@ function createPageByPageFields(i) {
     if (menu.data_key != null) {
         const submitBtn = createElement('button', {
             type: 'button',
-            className: 'btn-normal',
             id: 'btn_submit_' + menu.pageId,
             textContent: "提交",
             eventListeners: {
@@ -65,7 +63,6 @@ function createPageByPageFields(i) {
         btnFragment.appendChild(submitBtn);
         const closeBtn = createElement('button', {
             type: 'button',
-            className: 'btn-normal',
             id: 'btn_close_' + menu.pageId,
             textContent: "关闭",
             eventListeners: {
@@ -213,7 +210,6 @@ function createFormElements(menuMap, i) {
             // 按钮类型
             btnFragment.appendChild(createElement('button', {
                 type: 'button',
-                className: 'btn-normal',
                 textContent: field.name
             }));
         } else if (field.field_type == 10) {
@@ -346,31 +342,52 @@ function loadToolList() {
 }
 
 //格式化代码函数
-function formatJson(json, options) {
+function formatJson(json) {
     let formatted = '',
         pad = 0,
         PADDING = '    ';
-    options = options || {};
-    options.newlineAfterColonIfBeforeBraceOrBracket = (options.newlineAfterColonIfBeforeBraceOrBracket == true) ? true : false;
-    options.spaceAfterColon = (options.spaceAfterColon == false) ? false : true;
     if (typeof json !== 'string') {
         json = JSON.stringify(json);
-    } else if (json.trim() !== '') {
+    } else {
         try {
-            // 尝试解析JSON以验证格式
-            JSON.parse(json);
+            json = JSON.parse(json);
         } catch (e) {
             alert("解析错误:" + e.message);
             return json;
         }
+        json = JSON.stringify(json);
     }
-    // 添加实际格式化逻辑
-    try {
-        const parsed = JSON.parse(json || '{}');
-        formatted = JSON.stringify(parsed, null, 0);
-    } catch (e) {
-        formatted = json; // 格式错误时返回原始内容
-    }
+    json = json.replace(/([\{\}])/g, '\r\n$1\r\n');
+    json = json.replace(/([\[\]])/g, '\r\n$1\r\n');
+    json = json.replace(/(\,)/g, '$1\r\n');
+    json = json.replace(/(\r\n\r\n)/g, '\r\n');
+    json = json.replace(/\r\n\,/g, ',');
+    json = json.replace(/\:\r\n\{/g, ': {');
+    json = json.replace(/\:\r\n\[/g, ': [');
+    json = json.replace(/\:/g, ':');
+    json = json.replace(/\:"/g, ': "');
+    (json.split('\r\n')).forEach(function (node, index) {
+        var i = 0,
+            indent = 0,
+            padding = '';
+
+        if (node.match(/\{$/) || node.match(/\[$/)) {
+            indent = 1;
+        } else if (node.match(/\}/) || node.match(/\]/)) {
+            if (pad !== 0) {
+                pad -= 1;
+            }
+        } else {
+            indent = 0;
+        }
+
+        for (i = 0; i < pad; i++) {
+            padding += PADDING;
+        }
+
+        formatted += padding + node + '\r\n';
+        pad += indent;
+    });
     return formatted;
 };
 

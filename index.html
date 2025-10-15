@@ -16,6 +16,28 @@
 </div>
 <div class="container" id="blank_page"></div>
 <div class="container" id="page_id_1">
+    <p>
+        <button onclick="qzGet()">base64前缀获取</button>
+        <button onclick="download()">文本框内base64下载</button>
+        <button onclick="validateJson()">json格式化</button>
+        <button onclick="compressJson()">json压缩</button>
+        <input id="input1" placeholder="">
+        <button onclick="valReplaceAll()">替换\n</button>
+        <button onclick="valEval()">计算</button>
+        <br>处理数据：
+        <button onclick="clean_empty()">清除</button>
+        <button id="btnColor" onclick="setRgbTo16()">RGB转换为十六进制颜色</button>
+        <button onclick="camelToSnake()">驼峰转大写</button>
+        <button onclick="upperCase()">大写</button>
+        <button onclick="lowerCase()">小写</button>
+        <button onclick="toCamelCase()">下划线大写转驼峰</button>
+        <button onclick="getChinesePinyinAbbreviation()">中文转拼音首字母</button>
+        <span id="wait"></span>
+    <div class="page_id_1_empty" id="empty1" style="min-height: 20px;border: 1px solid;"></div>
+    </p>
+    <textarea style="width: 99%;min-height: 400px;border: 1px solid black;" id="page_id_1_empty" class="page_id_1_empty" placeholder="任意文件拖到这里转base64"></textarea>
+</div>
+<div class="container" id="page_id_2">
     <textarea id="editor" placeholder="开始输入内容..."></textarea>
     <div class="toolbar">
         <button class="btn-secondary" onclick="handleNewDocument()">新建</button>

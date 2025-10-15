@@ -4,7 +4,6 @@ function getHtmlContentInfo() {
     if (content == null || content == "") {
         return;
     }
-    content = formatJson(content);
     content = JSON.parse(content);
     content.menuList = content.menuList || [];
     content.ddflds = content.ddflds || {};
@@ -245,7 +244,6 @@ function toggleCollapse(btn) {
 /**保存到localStorage**/
 function saveHtmlContentInfo() {
     let content = document.getElementById('content_json').value;
-    content = formatJson(content);
     // 添加保存确认弹窗
     if (confirm('确定要保存内容吗？')) {
         // 内容非空校验

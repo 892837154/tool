@@ -4,7 +4,8 @@
  * default:默认值
  * */
 const defaultMenuList = [
-    {name: "首页", "toolShow": false},
+    {name: "首页", toolShow: false},
+    {name: "工具", js: "page_id_1.js"},
     {name: "记事本"},
     {
         name: "热量计算器", data_key: "heatList",
@@ -110,7 +111,7 @@ const defaultMenuList = [
             {data_key: "day", field_type: "10", name: "记录时间"},
         ]
     },
-    {"pageId": "page_json", name: "编辑", "toolShow": false},
+    {"pageId": "page_json", name: "编辑", toolShow: false},
 ];
 const menuList = [...defaultMenuList]
 /**
@@ -131,6 +132,11 @@ for (let i = 0; i < defaultMenuList.length; i++) {
     }
     let queryListKey = menuList[i].queryListKey || "";
     let queryListName = "";
+    if (menuList[i].js) {
+        const script = document.createElement('script');
+        script.src = "js/" + menuList[i].js;
+        document.head.appendChild(script);
+    }
     const is_create_queryListKey = !queryListKey;//是否生成queryListKey，如果没有则根据pageFields生成
     if (menuList[i].pageFields != null && menuList[i].pageFields.length > 0) {
         for (let p = 0; p < menuList[i].pageFields.length; p++) {
